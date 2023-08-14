@@ -5,24 +5,26 @@ from tabulate import tabulate
 
 # Telegram configurations
 TELEGRAM_TOKEN = ""
-CHAT_ID = ""
+CHAT_IDS = [""] 
 
 def send_telegram_message(message):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    url_base = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {
-        'chat_id': CHAT_ID,
         'text': message,
         'parse_mode': 'HTML'
     }
-    response = requests.post(url, data=payload)
-    return response.json()
+
+    for chat_id in CHAT_IDS:
+        payload['chat_id'] = chat_id
+        response = requests.post(url_base, data=payload)
+        print(f"Sent message to chat ID {chat_id}: {response.json()}")  # Optional: print response
 
 def format_and_send(sorted_symbols):
     # Format the data for improved readability
     formatted_data = []
     for symbol, rate in sorted_symbols:
         # Format the rate to have 5 decimal places
-        formatted_rate = f"{rate:.5f}"
+        formatted_rate = f"{rate * 100:.2f}%"
         
         # Highlight rates that exceed certain thresholds
         if rate > 0.01:
@@ -33,11 +35,12 @@ def format_and_send(sorted_symbols):
         formatted_data.append([symbol, formatted_rate])
 
     # Create a message with the formatted data
-    headers = ['Sym', 'Rate']
+    headers = ['Symbol', 'Funding Rate']
     message = tabulate(formatted_data, headers=headers, tablefmt='grid')
 
     # Send the message
     send_telegram_message(message)
+
 
 def fetch_data():
     url = "https://api.bybit.com/v5/market/tickers?category=linear"
